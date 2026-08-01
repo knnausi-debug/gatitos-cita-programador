@@ -18,8 +18,8 @@ const firaCode = Fira_Code({
 });
 
 export const metadata: Metadata = {
-  title: 'Algunas preguntitas 🐱',
-  description: 'Viste que podía hacerlo fácil... ahora tendrás que responder algunas preguntas.',
+  title: 'Nivel 2 🐱',
+  description: 'Bienvenida al Nivel 2... ahora sí, sin filtros.',
 };
 
 export const viewport: Viewport = {
