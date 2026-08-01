@@ -1,0 +1,8 @@
+node_modules/
+.next
+public/cita_nerd_gatos.html
+.env
+.env.local
+.env*.local
+.DS_Store
+*.log
