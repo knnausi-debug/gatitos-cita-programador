@@ -66,6 +66,15 @@ export const PREGUNTAS_TEXTO: PreguntaTexto[] = [
   },
 ];
 
+export const PREGUNTA_SEGUIR = {
+  key: 'seguir_preguntas',
+  icon: '⏭️',
+  label: 'seguir',
+  tag: '// nivel_2 · módulo: continuar.ask',
+  text: '¿Te gustaría seguir con estas secciones de preguntas?',
+  image: '/memes/gatito7.png',
+};
+
 /**
  * ARCHIVADO — Nivel 1 (oculto)
  * No se usa en el flujo actual.
@@ -83,4 +92,5 @@ export const NIVEL_1_ARCHIVADO = {
 
 export const STEP_INTRO = 0;
 export const STEP_PRIMERA_TEXTO = 1;
-export const STEP_RESUMEN = STEP_PRIMERA_TEXTO + PREGUNTAS_TEXTO.length;
+export const STEP_SEGUIR = STEP_PRIMERA_TEXTO + PREGUNTAS_TEXTO.length;
+export const STEP_RESUMEN = STEP_SEGUIR + 1;

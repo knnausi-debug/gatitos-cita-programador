@@ -528,6 +528,109 @@ img {
   }
 }
 
+/* TV apagándose */
+.tv-off-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.tv-off-flash {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  animation: tvFlash 0.18s ease-out forwards;
+}
+
+.tv-off-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 4px;
+  background: #fff;
+  transform: translateY(-50%) scaleX(1) scaleY(1);
+  animation: tvCollapse 0.85s cubic-bezier(.7,0,.3,1) forwards;
+  box-shadow: 0 0 24px #fff, 0 0 60px rgba(255,255,255,0.6);
+}
+
+.tv-off-msg {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  color: #666;
+  font-family: var(--font-fira), 'Fira Code', monospace;
+  opacity: 0;
+  animation: tvMsgIn 0.4s ease 1.1s forwards;
+  padding: 24px;
+}
+
+.tv-off-msg h3 {
+  color: #999;
+  font-size: clamp(16px, 5vw, 20px);
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.tv-off-msg p {
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+@keyframes tvFlash {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes tvCollapse {
+  0% {
+    transform: translateY(-50%) scaleX(1) scaleY(40);
+    opacity: 1;
+  }
+  55% {
+    transform: translateY(-50%) scaleX(1) scaleY(1);
+    opacity: 1;
+  }
+  85% {
+    transform: translateY(-50%) scaleX(0.02) scaleY(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-50%) scaleX(0) scaleY(0);
+    opacity: 0;
+  }
+}
+
+@keyframes tvMsgIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.prize-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(247, 243, 255, 0.78);
+  backdrop-filter: blur(6px);
+}
+
 .answer-field {
   width: 100%;
   display: flex;

@@ -3,10 +3,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   INTRO,
+  PREGUNTA_SEGUIR,
   PREGUNTAS_TEXTO,
   STEP_INTRO,
   STEP_PRIMERA_TEXTO,
   STEP_RESUMEN,
+  STEP_SEGUIR,
 } from '@/config/preguntas';
 
 const floatCatSrcs = [
@@ -29,27 +31,40 @@ function createSessionId() {
 export default function HomePage() {
   const [currentStep, setCurrentStep] = useState(STEP_INTRO);
   const [textAnswers, setTextAnswers] = useState<TextAnswers>({});
+  const [seguir, setSeguir] = useState<string>('');
   const [pickError, setPickError] = useState<Record<string, boolean>>({});
   const [showFinale, setShowFinale] = useState(false);
+  const [showPrize, setShowPrize] = useState(false);
+  const [showTvOff, setShowTvOff] = useState(false);
+  const [sunflowers, setSunflowers] = useState<{ id: number; left: number; delay: number; duration: number }[]>([]);
   const floatCatsContainer = useRef<HTMLDivElement | null>(null);
   const sessionIdRef = useRef(createSessionId());
 
   const summaryRows = useMemo(() => {
-    return PREGUNTAS_TEXTO.map((pregunta) => ({
+    const rows = PREGUNTAS_TEXTO.map((pregunta) => ({
       key: pregunta.key,
       icon: pregunta.icon,
       label: pregunta.label,
       value: textAnswers[pregunta.key]?.respuesta?.trim() || '—',
     }));
-  }, [textAnswers]);
+
+    rows.push({
+      key: PREGUNTA_SEGUIR.key,
+      icon: PREGUNTA_SEGUIR.icon,
+      label: PREGUNTA_SEGUIR.label,
+      value: seguir || '—',
+    });
+
+    return rows;
+  }, [textAnswers, seguir]);
 
   useEffect(() => {
     if (showFinale) spawnCats();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showFinale]);
 
-  function buildRespuestas(nextTextAnswers = textAnswers) {
-    return PREGUNTAS_TEXTO
+  function buildRespuestas(nextTextAnswers = textAnswers, nextSeguir = seguir) {
+    const rows = PREGUNTAS_TEXTO
       .map((pregunta) => {
         const value = nextTextAnswers[pregunta.key]?.respuesta?.trim() ?? '';
         if (!value) return null;
@@ -61,14 +76,29 @@ export default function HomePage() {
         };
       })
       .filter((row): row is { key: string; label: string; icon: string; value: string } => Boolean(row));
+
+    if (nextSeguir) {
+      rows.push({
+        key: PREGUNTA_SEGUIR.key,
+        label: PREGUNTA_SEGUIR.label,
+        icon: PREGUNTA_SEGUIR.icon,
+        value: nextSeguir,
+      });
+    }
+
+    return rows;
   }
 
   async function persistProgress(options: {
     textAnswersValue?: TextAnswers;
+    seguirValue?: string;
     pasoActual: string;
     completo?: boolean;
   }) {
-    const respuestas = buildRespuestas(options.textAnswersValue ?? textAnswers);
+    const respuestas = buildRespuestas(
+      options.textAnswersValue ?? textAnswers,
+      options.seguirValue ?? seguir,
+    );
     if (respuestas.length === 0) return;
 
     try {
@@ -114,11 +144,43 @@ export default function HomePage() {
   function nextFromText(index: number) {
     if (!validateTextStep(index)) return;
     const pregunta = PREGUNTAS_TEXTO[index];
-    const next = index === PREGUNTAS_TEXTO.length - 1 ? STEP_RESUMEN : STEP_PRIMERA_TEXTO + index + 1;
+    const next = index === PREGUNTAS_TEXTO.length - 1 ? STEP_SEGUIR : STEP_PRIMERA_TEXTO + index + 1;
     setCurrentStep(next);
     void persistProgress({
       textAnswersValue: textAnswers,
       pasoActual: pregunta.key,
+    });
+  }
+
+  function handleSeguir(answer: 'Sí' | 'No') {
+    setSeguir(answer);
+    void persistProgress({
+      seguirValue: answer,
+      pasoActual: answer === 'Sí' ? 'premio_ramo' : 'tv_off',
+      completo: answer === 'No',
+    });
+
+    if (answer === 'Sí') {
+      const petals = Array.from({ length: 20 }, (_, i) => ({
+        id: i,
+        left: Math.random() * 92,
+        delay: Math.random() * 0.9,
+        duration: 2.2 + Math.random() * 2.4,
+      }));
+      setSunflowers(petals);
+      setShowPrize(true);
+      return;
+    }
+
+    setShowTvOff(true);
+  }
+
+  function continueAfterPrize() {
+    setShowPrize(false);
+    setCurrentStep(STEP_RESUMEN);
+    void persistProgress({
+      seguirValue: 'Sí',
+      pasoActual: 'resumen',
     });
   }
 
@@ -145,6 +207,25 @@ export default function HomePage() {
         }
       }, i * 200);
     }
+  }
+
+  if (showTvOff) {
+    return (
+      <div className="tv-off-overlay">
+        <div className="tv-off-flash" />
+        <div className="tv-off-line" />
+        <div className="tv-off-msg">
+          <h3>📺 señal perdida</h3>
+          <p>
+            // tv.exe apagado
+            <br />
+            // no hay más secciones... por ahora
+            <br />
+            // tus respuestas sí se guardaron 💜
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -234,6 +315,35 @@ export default function HomePage() {
           );
         })}
 
+        {/* ¿SEGUIR CON LAS SECCIONES? */}
+        <div className="step" style={{ display: currentStep === STEP_SEGUIR && !showPrize ? 'block' : 'none' }}>
+          <img src={PREGUNTA_SEGUIR.image} alt="Decoración" style={{ display: 'block', margin: '0 auto 12px', width: '100%', maxWidth: 'min(180px, 50vw)', height: 'auto' }} />
+          <div className="q-card" style={{ background: 'var(--card)', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)', padding: 16, marginBottom: 16, border: '1px solid var(--border)', textAlign: 'center' }}>
+            <span className="q-tag" style={{ fontFamily: 'Fira Code, monospace', fontSize: 10, background: 'var(--primary-light)', color: 'var(--primary)', padding: '3px 8px', borderRadius: 100, display: 'inline-block', marginBottom: 10, fontWeight: 500 }}>
+              {PREGUNTA_SEGUIR.tag}
+            </span>
+            <div className="q-text" style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', lineHeight: 1.45, marginBottom: 18 }}>
+              {PREGUNTA_SEGUIR.icon} {PREGUNTA_SEGUIR.text}
+            </div>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button
+                className="btn-next"
+                style={{ minWidth: 120, minHeight: 48, borderRadius: 999, background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', color: '#78350f', border: 'none', padding: '12px 28px', fontWeight: 800, cursor: 'pointer', boxShadow: '0 8px 18px rgba(245,158,11,0.28)' }}
+                onClick={() => handleSeguir('Sí')}
+              >
+                Sí 🌻
+              </button>
+              <button
+                className="btn-next"
+                style={{ minWidth: 120, minHeight: 48, borderRadius: 999, background: 'linear-gradient(135deg, #374151, #111827)', color: 'white', border: 'none', padding: '12px 28px', fontWeight: 800, cursor: 'pointer', boxShadow: '0 8px 18px rgba(17,24,39,0.28)' }}
+                onClick={() => handleSeguir('No')}
+              >
+                No 📺
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* RESUMEN */}
         <div className="step" style={{ display: currentStep === STEP_RESUMEN ? 'block' : 'none' }}>
           <div className="summary-header" style={{ textAlign: 'center', marginBottom: 16 }}>
@@ -283,6 +393,48 @@ export default function HomePage() {
           <div ref={floatCatsContainer} />
         </div>
       </div>
+
+      {/* PREMIO RAMO */}
+      {showPrize && (
+        <>
+          <div className="sunflower-overlay" aria-hidden>
+            {sunflowers.map((petal) => (
+              <span
+                key={petal.id}
+                className="sunflower-petal"
+                style={{
+                  left: `${petal.left}%`,
+                  animationDelay: `${petal.delay}s`,
+                  animationDuration: `${petal.duration}s`,
+                }}
+              >
+                🌸
+              </span>
+            ))}
+          </div>
+          <div className="prize-overlay">
+            <div className="sunflower-card" style={{ borderColor: 'rgba(236,72,153,0.35)' }}>
+              <div className="sunflower-bouquet">💐🌸🌺</div>
+              <h3 style={{ fontSize: 20, fontWeight: 900, color: 'var(--primary-dark)', marginBottom: 8 }}>
+                ¡Ganaste un ramo!
+              </h3>
+              <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', lineHeight: 1.45, marginBottom: 8 }}>
+                Por seguir con las secciones de preguntas
+              </p>
+              <p style={{ fontFamily: 'Fira Code, monospace', fontSize: 10, color: 'var(--text-muted)', marginBottom: 16 }}>
+                // premio_ramo.exe ejecutado ✨
+              </p>
+              <button
+                className="btn-next"
+                style={{ width: '100%', background: 'linear-gradient(135deg, var(--accent), #db2777)', color: 'white', border: 'none', borderRadius: 'var(--radius-sm)', padding: '12px 16px', fontWeight: 800, cursor: 'pointer' }}
+                onClick={continueAfterPrize}
+              >
+                [ RECLAMAR RAMO → ]
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </main>
   );
 }
